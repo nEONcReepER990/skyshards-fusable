@@ -20,6 +20,8 @@ npm start
 
 Then open <http://127.0.0.1:3000>, type your Minecraft IGN and press **Analyze**.
 
+On Windows you can double-click **`start.bat`** instead. It checks for npm (and sends you to the Node.js download page if it is missing), starts the server in a hidden window and opens the page; use the **Shut down server** button in the page footer to stop it again.
+
 Your IGN is remembered in `localStorage`, and you can share a direct link: `http://127.0.0.1:3000/?ign=Notch`.
 
 Port can be changed with `PORT=4000 npm start`.

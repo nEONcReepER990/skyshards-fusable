@@ -301,6 +301,30 @@ $("#shard-filter").addEventListener("input", (event) => {
   if (state.report) renderInventory();
 });
 
+/* ---------------------------------------------------------------- shutdown */
+
+// The launcher runs the server without a visible terminal, so stopping it has to
+// happen from here. The server exits cleanly instead of being killed.
+$("#shutdown").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  if (!confirm("Shut down the local server? This page stops working until you start it again.")) return;
+  button.disabled = true;
+  button.textContent = "Shutting down…";
+  try {
+    const res = await fetch("/api/shutdown", { method: "POST", headers: { "x-skyshards-shutdown": "1" } });
+    if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "Shut down server";
+    alert(`Could not stop the server: ${error.message}`);
+    return;
+  }
+  document.body.innerHTML = `<div class="stopped">
+    <h1>Server stopped</h1>
+    <p>Close this tab. Run <code>start.bat</code> when you want it back.</p>
+  </div>`;
+});
+
 const initial = new URLSearchParams(location.search).get("ign") || localStorage.getItem("skyshards-fusable:ign") || "";
 if (initial) {
   $("#ign").value = initial;

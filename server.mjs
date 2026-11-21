@@ -2,6 +2,7 @@
  * Zero-dependency localhost server.
  *   GET /                -> the app
  *   GET /api/report?ign= -> shard + fusion report for a player
+ *   POST /api/shutdown   -> stop the server (the page's shut-down button)
  */
 import http from "node:http";
 import { readFile } from "node:fs/promises";
@@ -69,6 +70,19 @@ async function handleApi(req, res, url) {
   }
 }
 
+// The page needs a custom header, so another site cannot stop the server with a
+// plain cross-origin form post (that request would need a CORS preflight).
+function handleShutdown(req, res) {
+  if (req.headers["x-skyshards-shutdown"] !== "1") {
+    return sendJson(res, 400, { error: "Missing shutdown header." });
+  }
+  sendJson(res, 200, { ok: true, message: "Server shutting down." });
+  setTimeout(() => {
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 2_000).unref();
+  }, 100);
+}
+
 async function serveStatic(res, pathname) {
   const rel = pathname === "/" ? "index.html" : decodeURIComponent(pathname).replace(/^\/+/, "");
   const file = path.resolve(PUBLIC, rel);
@@ -90,6 +104,7 @@ async function serveStatic(res, pathname) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+  if (req.method === "POST" && url.pathname === "/api/shutdown") return handleShutdown(req, res);
   if (req.method !== "GET" && req.method !== "HEAD") {
     return sendJson(res, 405, { error: "Method not allowed." });
   }
@@ -103,4 +118,5 @@ await Promise.all([loadFusion(), loadDescriptions()]);
 server.listen(PORT, HOST, () => {
   console.log(`SkyShards Fusable running at http://${HOST}:${PORT}`);
   console.log("Open that URL, type your IGN, press Analyze.");
+  console.log('Use the "Shut down server" button on the page to stop it.');
 });

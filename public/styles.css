@@ -281,6 +281,23 @@ summary:hover { background: rgba(139, 92, 246, 0.06); }
 
 .foot { text-align: center; color: #616b80; font-size: 12px; padding: 0 16px 28px; }
 
+.foot .shutdown {
+  margin-left: 10px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #0f1320;
+  color: var(--muted);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.foot .shutdown:hover { border-color: #7f1d1d; color: #fca5a5; }
+.foot .shutdown:disabled { opacity: 0.6; cursor: default; }
+
+.stopped { max-width: 560px; margin: 18vh auto; padding: 0 20px; text-align: center; }
+.stopped p { color: var(--muted); font-size: 13.5px; }
+.stopped code { color: var(--text); background: #0f1320; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+
 @media (max-width: 780px) {
   summary, .fusion.chain { grid-template-columns: max-content max-content 1fr; }
   .recipe, .meta { grid-column: 1 / -1; }

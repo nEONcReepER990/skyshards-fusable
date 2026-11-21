@@ -4,7 +4,7 @@ A localhost website that reads your Hypixel SkyBlock **hunting box** and tells y
 
 skyshards.com already tells you how to get a shard; this fills the gap by working from *your* shards in the other direction.
 
-By default it shows only fusions whose output attribute you have not maxed yet, since a maxed shard is one you no longer need; switch to **All fusions** to see everything your box supports. The choice is remembered between visits.
+By default it shows only fusions whose output attribute you have not maxed yet, since a maxed shard is one you no longer need; switch to **All fusions** to see everything your box supports. Inside that default view, **Fusion-only** hides shards you could simply hunt instead, leaving only the ones fusion is the sole way to get. Both choices are remembered between visits.
 
 ## Requirements
 
@@ -36,6 +36,7 @@ node analyze.mjs <IGN>
 - `lib/fusion.mjs` — joins a player's shards with the recipe table and builds the report.
 - `public/` — the page (`index.html`, `app.js`, `styles.css`).
 - `data/fusion-data.json` — [SkyShards](https://github.com/Campionnn/SkyShards) recipe + shard table (MIT).
+- `data/desc.json` — SkyShards shard descriptions, including each shard's "how to hunt" lines (MIT).
 
 Player shards come from SkyShards' public backend proxy (`api.skyshards.com/skyshards/profile/<ign>`), which in turn reads the Hypixel API. No API key is needed and nothing leaves your machine except that request.
 
@@ -45,13 +46,15 @@ Player shards come from SkyShards' public backend proxy (`api.skyshards.com/skys
 - A recipe's output quantity is its `quantity` key in `fusion-data.json` (usually 1, sometimes 2).
 - "×N" is the maximum from a *single* pairing; recipes share shards, so the totals across lines are not additive.
 - "One extra fusion step away" only chains one intermediate; longer chains are not planned.
+- A shard counts as **huntable** when its `how_to_hunt` lines include anything other than "Fusing …"; shards whose only listed source is a fusion are what the **Fusion-only** toggle keeps.
 
 ## Updating the recipe data
 
-Replace `data/fusion-data.json` with the current file from SkyShards:
+Replace the bundled copies with the current files from SkyShards, then restart the server:
 
 ```shell
 curl -fsSL -o data/fusion-data.json https://raw.githubusercontent.com/Campionnn/SkyShards/master/public/fusion-data.json
+curl -fsSL -o data/desc.json https://raw.githubusercontent.com/Campionnn/SkyShards/master/src/desc.json
 ```
 
 ## Notes

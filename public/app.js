@@ -1,6 +1,8 @@
 const $ = (sel) => document.querySelector(sel);
 const RARITIES = ["legendary", "epic", "rare", "uncommon", "common"];
-const state = { report: null, rarity: "all", filter: "", onlyNeeded: true };
+const state = { report: null, rarity: "all", filter: "", onlyNeeded: true, onlyUnhuntable: false };
+
+const hideHuntable = () => state.onlyNeeded && state.onlyUnhuntable;
 
 const fmt = (n) => Number(n).toLocaleString();
 const esc = (s) =>
@@ -100,11 +102,26 @@ function renderNeedToggle() {
       renderMissing();
     };
   });
+
+  const hunt = $("#hunt-toggle");
+  hunt.hidden = !state.onlyNeeded;
+  hunt.classList.toggle("active", state.onlyUnhuntable);
+  hunt.setAttribute("aria-pressed", String(state.onlyUnhuntable));
+  hunt.textContent = `Fusion-only (${summary.unhuntableNeeded})`;
+  hunt.onclick = () => {
+    state.onlyUnhuntable = !state.onlyUnhuntable;
+    localStorage.setItem("skyshards-fusable:onlyUnhuntable", state.onlyUnhuntable ? "1" : "0");
+    renderFusions();
+    renderChains();
+    renderMissing();
+  };
 }
 
 function renderFusions() {
   renderNeedToggle();
-  const fusions = state.report.fusions.filter((f) => !state.onlyNeeded || f.needed);
+  const fusions = state.report.fusions.filter(
+    (f) => (!state.onlyNeeded || f.needed) && (!hideHuntable() || !f.huntable),
+  );
   const tabs = ["all", ...RARITIES].map((r) => {
     const count = r === "all" ? fusions.length : fusions.filter((f) => f.rarity === r).length;
     if (!count) return "";
@@ -157,7 +174,7 @@ function renderFusions() {
           <span class="recipe">${inputs}</span>
           <span class="meta">${f.crafts} craft${f.crafts === 1 ? "" : "s"} · +${f.outputQty} each${
             f.pairCount > 1 ? ` · ${f.pairCount} pairings` : ""
-          } ${levelText(f)}</span>
+          }${f.huntable ? ` · <span class="huntable">huntable</span>` : ""} ${levelText(f)}</span>
         </summary>
         <div class="options">
           <p class="hint">Every listed pairing your box supports (top 25):</p>
@@ -169,7 +186,9 @@ function renderFusions() {
 }
 
 function renderChains() {
-  const chains = state.report.chains.filter((c) => !state.onlyNeeded || c.needed);
+  const chains = state.report.chains.filter(
+    (c) => (!state.onlyNeeded || c.needed) && (!hideHuntable() || !c.huntable),
+  );
   $("#chain-count").textContent = `${chains.length} shard${chains.length === 1 ? "" : "s"}${
     state.onlyNeeded ? ` (of ${state.report.chains.length})` : ""
   }`;
@@ -192,7 +211,9 @@ function renderChains() {
           <span class="in"><b>${esc(mid.name)}</b> <span class="per">(${mid.perCraft} used per craft)</span>
             <span class="sub">from ${mid.from.map((i) => `${esc(i.name)} ×${fmt(i.amount)}`).join(" + ")}</span></span>
         </span>
-        <span class="meta">${c.crafts} craft${c.crafts === 1 ? "" : "s"} · +${c.outputQty} each ${levelText(c)}</span>
+        <span class="meta">${c.crafts} craft${c.crafts === 1 ? "" : "s"} · +${c.outputQty} each${
+          c.huntable ? ` · <span class="huntable">huntable</span>` : ""
+        } ${levelText(c)}</span>
       </div>`;
     })
     .join("");
@@ -202,7 +223,10 @@ function renderMissing() {
   const rows = state.report.missingPartners
     .map((m) => {
       const unlocks = m.unlocks.filter(
-        (u) => ["rare", "epic", "legendary"].includes(u.rarity) && (!state.onlyNeeded || u.needed),
+        (u) =>
+          ["rare", "epic", "legendary"].includes(u.rarity) &&
+          (!state.onlyNeeded || u.needed) &&
+          (!hideHuntable() || !u.huntable),
       );
       return { ...m, unlocks };
     })
@@ -254,6 +278,7 @@ async function analyze(ign) {
     state.report = data;
     state.rarity = "all";
     state.onlyNeeded = localStorage.getItem("skyshards-fusable:onlyNeeded") !== "0";
+    state.onlyUnhuntable = localStorage.getItem("skyshards-fusable:onlyUnhuntable") === "1";
     localStorage.setItem("skyshards-fusable:ign", name);
     history.replaceState(null, "", `?ign=${encodeURIComponent(name)}`);
     setStatus("");

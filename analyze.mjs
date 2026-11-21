@@ -2,7 +2,7 @@
  * Terminal version of the report (the website lives in server.mjs + public/).
  * Usage: node analyze.mjs [IGN]
  */
-import { buildReport, loadFusion } from "./lib/fusion.mjs";
+import { buildReport, loadDescriptions, loadFusion } from "./lib/fusion.mjs";
 
 const IGN = process.argv[2] ?? "nEONcReepER990";
 const res = await fetch(`https://api.skyshards.com/skyshards/profile/${encodeURIComponent(IGN)}`);
@@ -11,7 +11,10 @@ if (!res.ok) {
   process.exit(1);
 }
 
-const report = buildReport(await loadFusion(), await res.json(), { ignFallback: IGN });
+const report = buildReport(await loadFusion(), await res.json(), {
+  ignFallback: IGN,
+  descriptions: await loadDescriptions(),
+});
 const { player, summary } = report;
 
 console.log(`${player.name} (${player.uuid}) · ${player.profile}${player.gameMode ? ` [${player.gameMode}]` : ""}`);

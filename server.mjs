@@ -7,7 +7,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildReport, loadFusion } from "./lib/fusion.mjs";
+import { buildReport, loadDescriptions, loadFusion } from "./lib/fusion.mjs";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, "public");
@@ -60,8 +60,8 @@ async function handleApi(req, res, url) {
   }
 
   try {
-    const [fusion, profile] = await Promise.all([loadFusion(), fetchProfile(ign)]);
-    sendJson(res, 200, buildReport(fusion, profile, { ignFallback: ign }));
+    const [fusion, descriptions, profile] = await Promise.all([loadFusion(), loadDescriptions(), fetchProfile(ign)]);
+    sendJson(res, 200, buildReport(fusion, profile, { ignFallback: ign, descriptions }));
   } catch (error) {
     const status = error.status ?? 500;
     if (status >= 500) console.error(`[report] ${ign}: ${error.message}`);
@@ -97,8 +97,8 @@ const server = http.createServer(async (req, res) => {
   return serveStatic(res, url.pathname);
 });
 
-// Load the recipe table at boot so a broken data file fails loudly instead of on first request.
-await loadFusion();
+// Load the data files at boot so a broken file fails loudly instead of on first request.
+await Promise.all([loadFusion(), loadDescriptions()]);
 
 server.listen(PORT, HOST, () => {
   console.log(`SkyShards Fusable running at http://${HOST}:${PORT}`);

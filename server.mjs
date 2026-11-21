@@ -11,8 +11,8 @@ import { buildReport, loadFusion } from "./lib/fusion.mjs";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, "public");
-const PORT = Number(process.env.PORT ?? 3000);
-const HOST = process.env.HOST ?? "127.0.0.1";
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST || "127.0.0.1";
 const PROFILE_API = "https://api.skyshards.com/skyshards/profile";
 const profileCache = new Map();
 const CACHE_MS = 60_000;

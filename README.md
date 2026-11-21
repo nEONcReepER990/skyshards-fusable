@@ -4,6 +4,8 @@ A localhost website that reads your Hypixel SkyBlock **hunting box** and tells y
 
 skyshards.com already tells you how to get a shard; this fills the gap by working from *your* shards in the other direction.
 
+By default it shows only fusions whose output attribute you have not maxed yet, since a maxed shard is one you no longer need; switch to **All fusions** to see everything your box supports. The choice is remembered between visits.
+
 ## Requirements
 
 - [Node.js](https://nodejs.org) 18 or newer (no dependencies, no install step)

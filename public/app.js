@@ -1,6 +1,6 @@
 const $ = (sel) => document.querySelector(sel);
 const RARITIES = ["legendary", "epic", "rare", "uncommon", "common"];
-const state = { report: null, rarity: "all", filter: "" };
+const state = { report: null, rarity: "all", filter: "", onlyNeeded: true };
 
 const fmt = (n) => Number(n).toLocaleString();
 const esc = (s) =>
@@ -14,6 +14,9 @@ function setStatus(message, kind = "") {
 }
 
 /* --------------------------------------------------------------- rendering */
+
+const levelText = (item) =>
+  item.maxLevel ? `<span class="lv" title="Attribute level — a maxed shard needs no more fusing">lv ${item.level}/${item.maxLevel}</span>` : "";
 
 function renderSummary() {
   const { player, summary } = state.report;
@@ -31,7 +34,11 @@ function renderSummary() {
   const fusionTotal = state.report.fusions.length;
   const cards = [
     ["Shards in box", fmt(summary.total), `${summary.kinds} kinds`],
-    ["Fusions open", fmt(fusionTotal), `${state.report.chains.length} more one step away`],
+    [
+      "Fusions open",
+      fmt(fusionTotal),
+      `${summary.neededFusions} you still need · ${state.report.chains.length} one step away`,
+    ],
     ["Legendary", fmt(heaven), `${summary.fusionCounts.legendary ?? 0} fusable now`],
     ["Epic", fmt(epic), `${summary.fusionCounts.epic ?? 0} fusable now`],
   ];
@@ -72,8 +79,32 @@ function renderInventory() {
   $("#inventory").innerHTML = html;
 }
 
+function renderNeedToggle() {
+  const { summary } = state.report;
+  const buttons = { 1: summary.neededFusions, 0: state.report.fusions.length };
+  const el = $("#need-toggle");
+  el.querySelectorAll("button").forEach((btn) => {
+    const need = btn.dataset.need === "1";
+    btn.classList.toggle("active", need === state.onlyNeeded);
+    const label = need ? "Only what I need" : "All fusions";
+    btn.textContent = `${label} (${buttons[btn.dataset.need]})`;
+    btn.title = need
+      ? "Hide fusions whose attribute is already maxed"
+      : "Show every fusion your box supports";
+    btn.onclick = () => {
+      if (state.onlyNeeded === need) return;
+      state.onlyNeeded = need;
+      localStorage.setItem("skyshards-fusable:onlyNeeded", need ? "1" : "0");
+      renderFusions();
+      renderChains();
+      renderMissing();
+    };
+  });
+}
+
 function renderFusions() {
-  const fusions = state.report.fusions;
+  renderNeedToggle();
+  const fusions = state.report.fusions.filter((f) => !state.onlyNeeded || f.needed);
   const tabs = ["all", ...RARITIES].map((r) => {
     const count = r === "all" ? fusions.length : fusions.filter((f) => f.rarity === r).length;
     if (!count) return "";
@@ -91,9 +122,11 @@ function renderFusions() {
   );
 
   const list = fusions.filter((f) => state.rarity === "all" || f.rarity === state.rarity);
-  $("#fusion-count").textContent = `${list.length} shown`;
+  $("#fusion-count").textContent = `${list.length} shown${state.onlyNeeded ? ` of ${state.report.fusions.length}` : ""}`;
   if (!list.length) {
-    $("#fusions").innerHTML = `<p class="empty">Nothing at this rarity.</p>`;
+    $("#fusions").innerHTML = `<p class="empty">${
+      state.onlyNeeded ? "Everything at this rarity is already maxed — switch to “All fusions”." : "Nothing at this rarity."
+    }</p>`;
     return;
   }
 
@@ -124,7 +157,7 @@ function renderFusions() {
           <span class="recipe">${inputs}</span>
           <span class="meta">${f.crafts} craft${f.crafts === 1 ? "" : "s"} · +${f.outputQty} each${
             f.pairCount > 1 ? ` · ${f.pairCount} pairings` : ""
-          }</span>
+          } ${levelText(f)}</span>
         </summary>
         <div class="options">
           <p class="hint">Every listed pairing your box supports (top 25):</p>
@@ -136,10 +169,14 @@ function renderFusions() {
 }
 
 function renderChains() {
-  const chains = state.report.chains;
-  $("#chain-count").textContent = `${chains.length} shards`;
+  const chains = state.report.chains.filter((c) => !state.onlyNeeded || c.needed);
+  $("#chain-count").textContent = `${chains.length} shard${chains.length === 1 ? "" : "s"}${
+    state.onlyNeeded ? ` (of ${state.report.chains.length})` : ""
+  }`;
   if (!chains.length) {
-    $("#chains").innerHTML = `<p class="empty">No chained fusions available.</p>`;
+    $("#chains").innerHTML = `<p class="empty">${
+      state.onlyNeeded ? "Nothing here you still need — try “All fusions”." : "No chained fusions available."
+    }</p>`;
     return;
   }
   $("#chains").innerHTML = chains
@@ -155,28 +192,37 @@ function renderChains() {
           <span class="in"><b>${esc(mid.name)}</b> <span class="per">(${mid.perCraft} used per craft)</span>
             <span class="sub">from ${mid.from.map((i) => `${esc(i.name)} ×${fmt(i.amount)}`).join(" + ")}</span></span>
         </span>
-        <span class="meta">${c.crafts} craft${c.crafts === 1 ? "" : "s"} · +${c.outputQty} each</span>
+        <span class="meta">${c.crafts} craft${c.crafts === 1 ? "" : "s"} · +${c.outputQty} each ${levelText(c)}</span>
       </div>`;
     })
     .join("");
 }
 
 function renderMissing() {
-  const list = state.report.missingPartners.slice(0, 24);
-  if (!list.length) {
-    $("#missing").innerHTML = `<p class="empty">Nothing notable.</p>`;
+  const rows = state.report.missingPartners
+    .map((m) => {
+      const unlocks = m.unlocks.filter(
+        (u) => ["rare", "epic", "legendary"].includes(u.rarity) && (!state.onlyNeeded || u.needed),
+      );
+      return { ...m, unlocks };
+    })
+    .filter((m) => m.unlocks.length)
+    .slice(0, 24);
+  if (!rows.length) {
+    $("#missing").innerHTML = `<p class="empty">${
+      state.onlyNeeded ? "Nothing here you still need — try “All fusions”." : "Nothing notable."
+    }</p>`;
     return;
   }
-  $("#missing").innerHTML = list
+  $("#missing").innerHTML = rows
     .map(
       (m) => `<div class="missing-row">
         <div class="missing-name"><span class="badge ${m.rarity}">${m.rarity.slice(0, 3)}</span> ${esc(m.name)}
-          <span class="muted">· ${m.highTier} RARE+</span></div>
+          <span class="muted">· ${m.unlocks.length} RARE+</span></div>
         <div class="chips tight">${m.unlocks
-          .filter((u) => ["rare", "epic", "legendary"].includes(u.rarity))
           .slice(0, 8)
           .map((u) => `<span class="chip small ${u.rarity}">${esc(u.name)}</span>`)
-          .join("")}</div>
+          .join("")}${m.unlocks.length > 8 ? `<span class="chip small">+${m.unlocks.length - 8}</span>` : ""}</div>
       </div>`,
     )
     .join("");
@@ -207,6 +253,7 @@ async function analyze(ign) {
     if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
     state.report = data;
     state.rarity = "all";
+    state.onlyNeeded = localStorage.getItem("skyshards-fusable:onlyNeeded") !== "0";
     localStorage.setItem("skyshards-fusable:ign", name);
     history.replaceState(null, "", `?ign=${encodeURIComponent(name)}`);
     setStatus("");

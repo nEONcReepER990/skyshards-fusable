@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SkyShards Fusable</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="gem">◈</span>
+        <div>
+          <h1>SkyShards <span>Fusable</span></h1>
+          <p class="tagline">What your hunting box can fuse into — from SkyShards recipe data</p>
+        </div>
+      </div>
+      <form id="search-form" autocomplete="off">
+        <input id="ign" name="ign" placeholder="Minecraft IGN" spellcheck="false" maxlength="16" aria-label="Minecraft username" />
+        <button type="submit" id="submit">Analyze</button>
+      </form>
+    </header>
+
+    <main>
+      <section id="status" class="status">Loading recipe data…</section>
+      <div id="app" hidden>
+        <section class="profile">
+          <div class="profile-main">
+            <h2 id="player-name"></h2>
+            <p id="player-meta" class="muted"></p>
+          </div>
+          <div id="summary-cards" class="cards"></div>
+        </section>
+
+        <section class="block">
+          <div class="block-head">
+            <h2>Hunting box</h2>
+            <input id="shard-filter" class="mini-input" placeholder="Filter shards…" aria-label="Filter shards" />
+          </div>
+          <div id="inventory" class="inventory"></div>
+        </section>
+
+        <section class="block">
+          <div class="block-head">
+            <h2>Fusions available now <span id="fusion-count" class="count"></span></h2>
+            <div id="rarity-tabs" class="tabs"></div>
+          </div>
+          <p class="hint">
+            Each craft spends the listed fuse cost of both inputs (5 normally, 2 for reptile / amphibian / elemental, 1 for Chameleon).
+            “×N” is the most you can make with that one pairing — recipes share shards, so you cannot take every line at once.
+          </p>
+          <div id="fusions" class="fusions"></div>
+        </section>
+
+        <section class="block">
+          <div class="block-head"><h2>One extra fusion step away <span id="chain-count" class="count"></span></h2></div>
+          <p class="hint">Fuse the intermediate first, then feed it into the final recipe.</p>
+          <div id="chains" class="fusions"></div>
+        </section>
+
+        <section class="block">
+          <div class="block-head"><h2>One shard from more fusions</h2></div>
+          <p class="hint">Shards you don't own that would immediately unlock RARE+ fusions.</p>
+          <div id="missing" class="missing"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot">
+      Data: <a href="https://skyshards.com" target="_blank" rel="noreferrer">SkyShards</a> recipes ·
+      profiles via SkyShards' Hypixel proxy · local only, nothing is uploaded.
+    </footer>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

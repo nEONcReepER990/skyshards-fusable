@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.DS_Store
+report.json
+report.txt
+prof.json
+server.log
+server.pid
